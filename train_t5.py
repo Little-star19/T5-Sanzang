@@ -71,12 +71,10 @@ if __name__ == '__main__':
     parser.add_argument('--gpus', type=int, default=1)
     parser.add_argument('--kfold', type=int, default=1)
 
-
     # ========================= Data ==========================
     parser.add_argument('--train_file', type=str, default='data.txt', required=False)
     parser.add_argument('--dev_file', type=str, default='data.txt', required=False)
     parser.add_argument('--predict_file', type=str, required=False)
-    parser.add_argument('--noise_prob', default=0., type=float)
     parser.add_argument('--mlm_probability', default=0.15, type=float)
     parser.add_argument('--max_source_length', default=512, type=int)
     parser.add_argument('--max_target_length', default=200, type=int)

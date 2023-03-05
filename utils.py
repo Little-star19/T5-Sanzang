@@ -61,8 +61,8 @@ class EncoderDecoderData:
                 data = ''
                 continue
         # MASK标记
-        # masklist: <extra_id_0> walks in <extra_id_1> park'
-        # targetlist: <extra_id_0> cute dog <extra_id_1> the <extra_id_2> </s>
+        # masklist: ' <extra_id_0> walks in <extra_id_1> park '
+        # targetlist: ' <extra_id_0> cute dog <extra_id_1> the <extra_id_2> </s> '
         mask_dict = []
         for data in datalist:
             targetlist = []
