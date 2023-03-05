@@ -2,11 +2,13 @@ import os
 import argparse
 import pytorch_lightning as pl
 from transformers import get_linear_schedule_with_warmup
-from utils import *
+from sz_utils import *
 from transformers.models.t5 import T5ForConditionalGeneration
 import warnings
 
+
 warnings.filterwarnings('ignore')
+
 
 
 class TaskLightModel(pl.LightningModule):
@@ -19,10 +21,22 @@ class TaskLightModel(pl.LightningModule):
         return self.model(**inputs)
 
     def training_step(self, batch, batch_idx):
-        outputs = model.forward(input_ids=batch['decoder_input_ids'], labels=batch['decoder_input_ids'])
-        loss, logits = outputs[:2]
-        # logits = self(**batch).logits
-        # loss = ce_loss(logits, batch['labels'], batch['decoder_attention_mask'])
+        outputs = model.forward(input_ids=batch['input_ids'], labels=batch['labels'])
+        loss = outputs.loss
+        logits = outputs.logits
+
+    def predict_batch(self, batch):
+        pred = self.model.generate(eos_token_id=tokenizer.sep_token_id,
+                                   decoder_start_token_id=tokenizer.cls_token_id,
+                                   num_beams=3,
+                                   input_ids=batch['input_ids'], attention_mask=batch['attention_mask'],
+                                   use_cache=True,
+                                   max_length=self.args.max_target_length,
+                                   )
+        pred = pred[:, 1:].cpu().numpy()
+        pred = tokenizer.batch_decode(pred, skip_special_tokens=True)
+        pred = [s.replace(' ', '') for s in pred]
+        return pred
 
     def configure_optimizers(self):
         optimizer = create_optimizer(self.model, self.args.lr, self.args.weight_decay)
@@ -78,15 +92,8 @@ if __name__ == '__main__':
         os.mkdir(args.save_path)
     tokenizer = T5PegasusTokenizer.from_pretrained(args.model_path)
     data = EncoderDecoderData(args, tokenizer)
-    # print(data.read_file('news2016zh_1.txt'))  # 读取数据
+    # print(data.read_file('data.txt'))  # 读取数据
     dataloaders = data.get_dataloader()
-    # l = tokenizer.tokenize('我爱[SEP]中国')
-    # print(l)
-    # print(tokenizer.convert_tokens_to_ids(l))
-    # q = tokenizer.convert_tokens_to_ids(l)
-    # print(tokenizer.convert_ids_to_tokens([100,101,102,103,1234]))
-    # print(tokenizer.get_special_tokens_mask([100,101,102,103,1234],already_has_special_tokens=True))
-    print(tokenizer.convert_tokens_to_ids(tokenizer.mask_token))
 
     for fold in range(args.kfold):
         pl.seed_everything(args.seed + fold)
